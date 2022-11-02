@@ -1,0 +1,21 @@
+WHITESPACE = _{ " " | "\t" | NEWLINE }
+ws = _{ WHITESPACE }
+
+quoted = @{ (!"\'" ~ ANY)* }
+string = _{ "\'" ~ quoted ~ "\'" }
+
+ident = { (ASCII_ALPHA | "_")+ }
+
+atom = _{ ident | string }
+
+select = ${ "select" ~ ws+ ~ (
+    	(atom ~ (ws* ~ "," ~ ws* ~ atom)*) 
+      	| "*"
+    )}
+
+comparison = ${ "where" ~ ws+ ~ atom ~ ws* ~ comparator ~ ws* ~ atom }
+comparator = { "=" | "like" }
+
+command = _{ select | comparison }
+
+program = _{ SOI ~ (command ~ ("|" ~ command)*)? ~ EOI }
