@@ -1,17 +1,12 @@
-pub mod operators;
 pub mod ast;
-
-use ast::build_ast;
+pub mod operators;
 
 use std::{
     io::{BufRead, BufReader},
     path::PathBuf,
 };
 
-use {
-    clap::Parser as ClapParser,
-    pest::Parser,
-};
+use {clap::Parser as ClapParser, pest::Parser};
 
 extern crate pest;
 #[macro_use]
@@ -65,7 +60,7 @@ fn main() -> Result<(), ()> {
     }
 
     match DsvqlParser::parse(Rule::program, cli.commands.as_ref()) {
-        Ok(pairs) => match build_ast(pairs) {
+        Ok(pairs) => match ast::build(pairs) {
             Ok(ast) => match ast.run_on(reader, cli.delimiter.unwrap()) {
                 Ok(lines) => println!("{}", lines.join("\n")),
                 Err(err) => error!("Error running query", err),

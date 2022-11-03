@@ -18,7 +18,7 @@ pub struct Ast(Vec<Command>);
 #[derive(Debug)]
 pub enum Command {
     Select(Column),
-    Where(String, Comparison),
+    Comparison(String, Comparison),
 }
 
 #[derive(Debug)]
@@ -51,7 +51,7 @@ macro_rules! fields {
     };
 }
 
-pub fn build_ast(pairs: Pairs<Rule>) -> Result<Ast, Error<Rule>> {
+pub fn build(pairs: Pairs<Rule>) -> Result<Ast, Error<Rule>> {
     let mut commands = Vec::new();
 
     for pair in pairs {
@@ -99,11 +99,11 @@ fn build_command(pair: Pair<Rule>) -> Result<Command, Error<Rule>> {
             })?;
 
             match comparator.as_str() {
-                "=" => Ok(Command::Where(
+                "=" => Ok(Command::Comparison(
                     lhs.as_str().to_owned(),
                     Comparison::Equals(rhs.as_str().to_owned()),
                 )),
-                "like" => Ok(Command::Where(
+                "like" => Ok(Command::Comparison(
                     lhs.as_str().to_owned(),
                     Comparison::Matches(matchexpr),
                 )),
@@ -165,28 +165,8 @@ impl Ast {
                             Command::Select(columns) => {
                                 record = select::apply(columns, &headers, record)?
                             }
-                            Command::Where(column, comparison) => {
-                                let value = record
-                                    .get(
-                                        *headers
-                                            .get(column.as_str())
-                                            .ok_or(format!("Invalid column '{column}'"))?,
-                                    )
-                                    .ok_or(format!("Missing column {column}"))?;
-                                match comparison {
-                                    Comparison::Equals(other) => {
-                                        if value != other {
-                                            rejected = true;
-                                            break;
-                                        }
-                                    }
-                                    Comparison::Matches(pattern) => {
-                                        if !pattern.is_match(value) {
-                                            rejected = true;
-                                            break;
-                                        }
-                                    }
-                                }
+                            Command::Comparison(column, comparison) => {
+                                rejected = comparison::apply(column, comparison, &headers, &record)?
                             }
                         }
                     }
