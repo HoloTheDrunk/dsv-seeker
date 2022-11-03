@@ -4,7 +4,7 @@ A small tool to run basic queries on DSV files.
 
 ## Commands
 
-### `select (* | (name (, name)*))`
+### `select ("*" | (name (, name)*))`
 
 The `select` command keeps only the desired columns.
 
