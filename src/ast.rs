@@ -72,13 +72,7 @@ fn build_command(pair: Pair<Rule>) -> Result<Command, Error<Rule>> {
                 .map(|quoted| quoted.as_str().to_owned())
                 .collect::<Vec<String>>();
 
-            Ok(Command::Select(
-                if columns.len() == 1 && columns.get(0).unwrap() == "*" {
-                    Column::All
-                } else {
-                    Column::Names(columns)
-                },
-            ))
+            Ok(Command::Select(Column::from(columns)))
         }
         Rule::comparison => {
             fields!(pair |> children : lhs, comparator, rhs);
@@ -124,6 +118,16 @@ fn build_command(pair: Pair<Rule>) -> Result<Command, Error<Rule>> {
     }
 }
 
+impl From<Vec<String>> for Column {
+    fn from(columns: Vec<String>) -> Self {
+        if columns.len() == 1 && columns.get(0).unwrap() == "*" {
+            Column::All
+        } else {
+            Column::Names(columns)
+        }
+    }
+}
+
 impl Ast {
     pub fn run_on(
         &self,
@@ -166,7 +170,14 @@ impl Ast {
                                 record = select::apply(columns, &headers, record)?
                             }
                             Command::Comparison(column, comparison) => {
-                                rejected = comparison::apply(column, comparison, &headers, &record)?
+                                rejected =
+                                    comparison::apply(column, comparison, &headers, &record)?;
+
+                                // Early break as a rejected line need not be checked or filtered
+                                // more.
+                                if rejected {
+                                    break;
+                                }
                             }
                         }
                     }
