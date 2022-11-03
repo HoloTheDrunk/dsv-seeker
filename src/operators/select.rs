@@ -9,11 +9,11 @@ pub fn run(
 ) -> Result<Box<dyn Iterator<Item = csv::StringRecord>>, String> {
     let column_indices = if let Column::Names(names) = columns {
         names
-            .into_iter()
+            .iter()
             .map(|name| {
                 headers
                     .get(name.as_str())
-                    .map(|u| *u)
+                    .copied()
                     .ok_or(format!("Invalid column '{name}'"))
             })
             .collect::<Result<Vec<usize>, String>>()?
