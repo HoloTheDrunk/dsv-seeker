@@ -27,7 +27,7 @@ pub enum Column {
     All,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Comparison {
     Equals(String),
     Matches(Regex),
@@ -146,7 +146,22 @@ impl Ast {
 
         for command in commands {
             if let Command::Select(columns) = command {
-                header_record = select::apply(columns, &headers, header_record)?;
+                if let Column::Names(names) = columns {
+                    header_record = select::apply(
+                        names
+                            .iter()
+                            .map(|name| {
+                                headers
+                                    .get(name)
+                                    .copied()
+                                    .ok_or(format!("Column not found {name}"))
+                            })
+                            .collect::<Result<Vec<usize>, String>>()?,
+                        header_record,
+                    )?;
+                }
+            } else if let Command::Enumerate(name) = command {
+                header_record = csv::StringRecord::from(vec!["count", name]);
             }
         }
 
@@ -158,44 +173,37 @@ impl Ast {
 
         let mut output = vec![remaining_headers];
 
-        for record in reader.records() {
-            match record {
-                Ok(record) => {
-                    let mut record = record;
-                    let mut rejected = false;
-
-                    for command in commands.iter() {
-                        match command {
-                            Command::Select(columns) => {
-                                record = select::apply(columns, &headers, record)?
-                            }
-                            Command::Comparison(column, comparison) => {
-                                rejected =
-                                    comparison::apply(column, comparison, &headers, &record)?;
-
-                                // Early break as a rejected line need not be checked or filtered
-                                // more.
-                                if rejected {
-                                    break;
-                                }
-                            }
-                        }
+        let mut records: Box<dyn Iterator<Item = csv::StringRecord>> =
+            Box::new(reader.into_records().enumerate().filter_map(
+                |(index, result)| match result {
+                    Ok(res) => Some(res),
+                    Err(err) => {
+                        eprintln!("Error reading line {index}: {err}");
+                        None
                     }
+                },
+            ));
 
-                    if !rejected {
-                        output.push(
-                            record
-                                .iter()
-                                .map(String::from)
-                                .collect::<Vec<String>>()
-                                .join(delim.to_string().as_ref()),
-                        );
-                    }
+        for command in commands.iter() {
+            records = match command {
+                Command::Select(columns) => select::run(records, columns, &headers)?,
+                Command::Comparison(column, comparison) => {
+                    comparison::run(records, column.clone(), &headers, comparison.clone())?
                 }
-                Err(err) => return Err(format!("DSV parsing failed: {err}")),
             }
         }
 
+        output.extend(
+            records
+                .map(|record| {
+                    record
+                        .into_iter()
+                        .map(String::from)
+                        .collect::<Vec<String>>()
+                        .join(delim.to_string().as_str())
+                })
+                .collect::<Vec<String>>(),
+        );
         Ok(output)
     }
 }

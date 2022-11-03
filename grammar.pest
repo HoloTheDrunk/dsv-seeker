@@ -16,6 +16,8 @@ select = ${ "select" ~ ws+ ~ (
 comparison = ${ "where" ~ ws+ ~ atom ~ ws* ~ comparator ~ ws* ~ atom }
 comparator = { "=" | "like" }
 
-command = _{ select | comparison }
+enumerate = ${ "enum" ~ ws+ ~ atom }
+
+command = _{ select | comparison | enumerate }
 
 program = _{ SOI ~ (command ~ ("|" ~ command)*)? ~ EOI }
