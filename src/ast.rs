@@ -2,7 +2,7 @@ use crate::operators::*;
 
 use crate::Rule;
 
-use std::{collections::HashMap, io::BufRead};
+use std::io::BufRead;
 
 use {
     pest::{
@@ -19,6 +19,7 @@ pub struct Ast(Vec<Command>);
 pub enum Command {
     Select(Column),
     Comparison(String, Comparison),
+    Enumerate(String),
 }
 
 #[derive(Debug)]
@@ -109,6 +110,15 @@ fn build_command(pair: Pair<Rule>) -> Result<Command, Error<Rule>> {
                 )),
             }
         }
+        Rule::enumerate => {
+            let column = pair
+                .into_inner()
+                .next()
+                .map(|atom| atom.as_str().to_owned())
+                .unwrap();
+
+            Ok(Command::Enumerate(column))
+        }
         rule => Err(Error::new_from_span(
             ErrorVariant::CustomError {
                 message: format!("Unhandled rule {rule:?}"),
@@ -131,79 +141,43 @@ impl From<Vec<String>> for Column {
 impl Ast {
     pub fn run_on(
         &self,
-        mut reader: csv::Reader<Box<dyn BufRead>>,
+        reader: csv::Reader<Box<dyn BufRead>>,
         delim: char,
     ) -> Result<Vec<String>, String> {
         let Ast(commands) = &self;
 
-        let mut header_record = reader.headers().map_err(|err| format!("{err:?}"))?.clone();
-
-        let headers = header_record
-            .iter()
+        // let mut output = vec![remaining_headers];
+        let mut records: Vec<csv::StringRecord> = reader
+            .into_records()
             .enumerate()
-            .map(|(k, v)| (v.to_owned(), k))
-            .collect::<HashMap<String, usize>>();
-
-        for command in commands {
-            if let Command::Select(columns) = command {
-                if let Column::Names(names) = columns {
-                    header_record = select::apply(
-                        names
-                            .iter()
-                            .map(|name| {
-                                headers
-                                    .get(name)
-                                    .copied()
-                                    .ok_or(format!("Column not found {name}"))
-                            })
-                            .collect::<Result<Vec<usize>, String>>()?,
-                        header_record,
-                    )?;
+            .filter_map(|(index, result)| match result {
+                Ok(res) => Some(res),
+                Err(err) => {
+                    eprintln!("Error reading line {index}: {err}");
+                    None
                 }
-            } else if let Command::Enumerate(name) = command {
-                header_record = csv::StringRecord::from(vec!["count", name]);
-            }
-        }
-
-        let remaining_headers = header_record
-            .iter()
-            .map(String::from)
-            .collect::<Vec<String>>()
-            .join(delim.to_string().as_str());
-
-        let mut output = vec![remaining_headers];
-
-        let mut records: Box<dyn Iterator<Item = csv::StringRecord>> =
-            Box::new(reader.into_records().enumerate().filter_map(
-                |(index, result)| match result {
-                    Ok(res) => Some(res),
-                    Err(err) => {
-                        eprintln!("Error reading line {index}: {err}");
-                        None
-                    }
-                },
-            ));
+            })
+            .collect();
 
         for command in commands.iter() {
             records = match command {
-                Command::Select(columns) => select::run(records, columns, &headers)?,
+                Command::Select(columns) => select::run(records.into_iter(), columns)?,
                 Command::Comparison(column, comparison) => {
-                    comparison::run(records, column.clone(), &headers, comparison.clone())?
+                    comparison::run(records.into_iter(), column.clone(), comparison.clone())?
                 }
+                Command::Enumerate(column) => enumerate::run(records.into_iter(), column.clone())?,
             }
         }
 
-        output.extend(
-            records
-                .map(|record| {
-                    record
-                        .into_iter()
-                        .map(String::from)
-                        .collect::<Vec<String>>()
-                        .join(delim.to_string().as_str())
-                })
-                .collect::<Vec<String>>(),
-        );
-        Ok(output)
+        Ok(records
+            .into_iter()
+            .map(|record| {
+                record
+                    .into_iter()
+                    .map(String::from)
+                    .collect::<Vec<String>>()
+                    .join(delim.to_string().as_str())
+            })
+            .collect::<Vec<String>>())
     }
 }

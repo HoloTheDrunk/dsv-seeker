@@ -49,6 +49,8 @@ fn main() -> Result<(), ()> {
     }
 
     let reader = csv::ReaderBuilder::new()
+        // Custom header handling
+        .has_headers(false)
         .delimiter(cli.delimiter.unwrap() as u8)
         .from_reader(input);
 

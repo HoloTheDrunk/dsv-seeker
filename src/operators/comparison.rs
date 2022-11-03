@@ -3,24 +3,36 @@ use crate::ast::Comparison;
 use std::collections::HashMap;
 
 pub fn run(
-    records: Box<dyn Iterator<Item = csv::StringRecord>>,
+    mut records: impl Iterator<Item = csv::StringRecord>,
     column: String,
-    headers: &HashMap<String, usize>,
     comparison: Comparison,
-) -> Result<Box<dyn Iterator<Item = csv::StringRecord>>, String> {
+) -> Result<Vec<csv::StringRecord>, String> {
+    let headers = records
+        .next()
+        .map(|record| {
+            record
+                .iter()
+                .enumerate()
+                .map(|(k, v)| (v.to_owned(), k))
+                .collect::<HashMap<String, usize>>()
+        })
+        .ok_or_else(|| "Empty stream".to_string())?;
+
     let column_index = *headers
         .get(column.as_str())
         .ok_or(format!("Invalid column '{column}'"))?;
 
-    Ok(Box::new(records.filter(move |record| {
-        match apply(column_index, comparison.clone(), record) {
-            Ok(rejected) => rejected,
-            Err(err) => {
-                eprintln!("{err}");
-                false
-            }
-        }
-    })))
+    Ok(records
+        .filter(
+            move |record| match apply(column_index, comparison.clone(), record) {
+                Ok(rejected) => rejected,
+                Err(err) => {
+                    eprintln!("{err}");
+                    false
+                }
+            },
+        )
+        .collect())
 }
 
 /// Returns `true` if the record was rejected by the condition, false otherwise.
