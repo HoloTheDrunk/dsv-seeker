@@ -1,19 +1,12 @@
 use std::collections::HashMap;
 
+use super::lib::get_headers;
+
 pub fn run(
     mut records: impl Iterator<Item = csv::StringRecord>,
     column: String,
 ) -> Result<Vec<csv::StringRecord>, String> {
-    let headers = records
-        .next()
-        .map(|record| {
-            record
-                .iter()
-                .enumerate()
-                .map(|(k, v)| (v.to_owned(), k))
-                .collect::<HashMap<String, usize>>()
-        })
-        .ok_or_else(|| "Empty stream".to_string())?;
+    let headers = get_headers(&mut records)?;
 
     let column_index = *headers
         .get(column.as_str())

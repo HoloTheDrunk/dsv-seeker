@@ -7,7 +7,6 @@ pub fn run(
     columns: &Column,
 ) -> Result<Vec<csv::StringRecord>, String> {
     let raw_headers = records.next().ok_or_else(|| "Empty stream".to_string())?;
-    dbg!(&raw_headers);
     let headers = raw_headers
         .iter()
         .enumerate()

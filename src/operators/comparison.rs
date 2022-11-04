@@ -1,22 +1,13 @@
-use crate::ast::Comparison;
+use super::lib::get_headers;
 
-use std::collections::HashMap;
+use crate::ast::Comparison;
 
 pub fn run(
     mut records: impl Iterator<Item = csv::StringRecord>,
     column: String,
     comparison: Comparison,
 ) -> Result<Vec<csv::StringRecord>, String> {
-    let headers = records
-        .next()
-        .map(|record| {
-            record
-                .iter()
-                .enumerate()
-                .map(|(k, v)| (v.to_owned(), k))
-                .collect::<HashMap<String, usize>>()
-        })
-        .ok_or_else(|| "Empty stream".to_string())?;
+    let headers = get_headers(&mut records)?;
 
     let column_index = *headers
         .get(column.as_str())
