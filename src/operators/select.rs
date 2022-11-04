@@ -1,17 +1,12 @@
-use crate::ast::*;
+use super::lib::get_headers;
 
-use std::collections::HashMap;
+use crate::ast::*;
 
 pub fn run(
     mut records: impl Iterator<Item = csv::StringRecord>,
     columns: &Column,
 ) -> Result<Vec<csv::StringRecord>, String> {
-    let raw_headers = records.next().ok_or_else(|| "Empty stream".to_string())?;
-    let headers = raw_headers
-        .iter()
-        .enumerate()
-        .map(|(k, v)| (v.to_owned(), k))
-        .collect::<HashMap<String, usize>>();
+    let (raw_headers, headers) = get_headers(&mut records)?;
 
     if let Column::Names(names) = columns {
         let indices = names
@@ -32,6 +27,7 @@ pub fn run(
     }
 }
 
+/// Returns the desired columns from the `StringRecord` in a new `StringRecord`.
 fn apply(columns: Vec<usize>, record: csv::StringRecord) -> Result<csv::StringRecord, String> {
     Ok(csv::StringRecord::from(
         columns

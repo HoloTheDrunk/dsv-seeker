@@ -1,8 +1,6 @@
-use crate::operators::*;
+use crate::{operators::*, Rule};
 
-use crate::Rule;
-
-use std::io::BufRead;
+use std::{io::BufRead, str::FromStr};
 
 use {
     pest::{
@@ -10,6 +8,7 @@ use {
         iterators::{Pair, Pairs},
     },
     regex::Regex,
+    strum::EnumString,
 };
 
 #[derive(Debug, Default)]
@@ -20,6 +19,11 @@ pub enum Command {
     Select(Column),
     Comparison(String, Comparison),
     Enumerate(String),
+    Sort {
+        is_numerical: bool,
+        column: String,
+        direction: SortDirection,
+    },
 }
 
 #[derive(Debug)]
@@ -32,6 +36,14 @@ pub enum Column {
 pub enum Comparison {
     Equals(String),
     Matches(Regex),
+}
+
+#[derive(Clone, Debug, EnumString)]
+pub enum SortDirection {
+    #[strum(serialize = "asc")]
+    Ascending,
+    #[strum(serialize = "desc")]
+    Descending,
 }
 
 macro_rules! fields {
@@ -119,6 +131,37 @@ fn build_command(pair: Pair<Rule>) -> Result<Command, Error<Rule>> {
 
             Ok(Command::Enumerate(column))
         }
+        Rule::sort => {
+            let mut inner = pair.into_inner();
+            let next = inner.next().unwrap();
+
+            let (is_numerical, column) = if let Rule::numerical_sort = next.as_rule() {
+                // Get the numerical_sort subrule's atom
+                (true, next.into_inner().next().unwrap().as_str().to_owned())
+            } else {
+                (false, next.as_str().to_owned())
+            };
+
+            let direction = inner.next().unwrap();
+            let direction = SortDirection::from_str(direction.as_str()).map_err(|err| {
+                Error::new_from_span(
+                    ErrorVariant::CustomError {
+                        message: format!(
+                            "{}: Invalid direction '{}'",
+                            err.to_string(),
+                            direction.as_str()
+                        ),
+                    },
+                    direction.as_span(),
+                )
+            })?;
+
+            Ok(Command::Sort {
+                is_numerical,
+                column,
+                direction,
+            })
+        }
         rule => Err(Error::new_from_span(
             ErrorVariant::CustomError {
                 message: format!("Unhandled rule {rule:?}"),
@@ -139,6 +182,7 @@ impl From<Vec<String>> for Column {
 }
 
 impl Ast {
+    /// Run the AST's commands on an input.
     pub fn run_on(
         &self,
         reader: csv::Reader<Box<dyn BufRead>>,
@@ -166,6 +210,16 @@ impl Ast {
                     comparison::run(records.into_iter(), column.clone(), comparison.clone())?
                 }
                 Command::Enumerate(column) => enumerate::run(records.into_iter(), column.clone())?,
+                Command::Sort {
+                    is_numerical,
+                    column,
+                    direction,
+                } => sort::run(
+                    records.into_iter(),
+                    column.clone(),
+                    *is_numerical,
+                    direction.clone(),
+                )?,
             }
         }
 

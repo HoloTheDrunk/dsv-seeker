@@ -18,6 +18,10 @@ comparator = { "=" | "like" }
 
 enumerate = ${ "enum" ~ ws+ ~ atom }
 
-command = _{ select | comparison | enumerate }
+sort = ${ "sort" ~ ws+ ~ (numerical_sort | atom) ~ ws+ ~ sort_direction }
+numerical_sort = ${ "num" ~ ws+ ~ atom }
+sort_direction = ${ "asc" | "desc" | "posc" }
+
+command = _{ select | comparison | enumerate | sort }
 
 program = _{ SOI ~ (command ~ ("|" ~ command)*)? ~ EOI }

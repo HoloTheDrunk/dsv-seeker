@@ -11,3 +11,4 @@ csv = "1.1.6"
 pest = "2.4.0"
 pest_derive = "2.4.0"
 regex = "1.6.0"
+strum = { version = "0.24.1", features = ["derive"] }

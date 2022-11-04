@@ -7,27 +7,27 @@ pub fn run(
     column: String,
     comparison: Comparison,
 ) -> Result<Vec<csv::StringRecord>, String> {
-    let headers = get_headers(&mut records)?;
+    let (raw_headers, headers) = get_headers(&mut records)?;
 
     let column_index = *headers
         .get(column.as_str())
         .ok_or(format!("Invalid column '{column}'"))?;
 
-    Ok(records
-        .filter(
-            move |record| match apply(column_index, comparison.clone(), record) {
+    Ok(std::iter::once(raw_headers)
+        .chain(records.filter(move |record| {
+            match apply(column_index, comparison.clone(), record) {
                 Ok(rejected) => rejected,
                 Err(err) => {
                     eprintln!("{err}");
                     false
                 }
-            },
-        )
+            }
+        }))
         .collect())
 }
 
 /// Returns `true` if the record was rejected by the condition, false otherwise.
-pub fn apply(
+fn apply(
     column: usize,
     comparison: Comparison,
     record: &csv::StringRecord,

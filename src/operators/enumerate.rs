@@ -6,7 +6,7 @@ pub fn run(
     mut records: impl Iterator<Item = csv::StringRecord>,
     column: String,
 ) -> Result<Vec<csv::StringRecord>, String> {
-    let headers = get_headers(&mut records)?;
+    let (_raw, headers) = get_headers(&mut records)?;
 
     let column_index = *headers
         .get(column.as_str())
@@ -34,7 +34,7 @@ pub fn run(
     )
 }
 
-pub fn apply(column: usize, record: csv::StringRecord) -> Result<String, String> {
+fn apply(column: usize, record: csv::StringRecord) -> Result<String, String> {
     record
         .get(column)
         .map(String::from)
