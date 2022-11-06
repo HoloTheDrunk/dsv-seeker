@@ -24,6 +24,7 @@ pub enum Command {
         column: String,
         direction: SortDirection,
     },
+    Trim(Column),
 }
 
 #[derive(Debug)]
@@ -64,6 +65,15 @@ macro_rules! fields {
     };
 }
 
+fn get_column_selector(selector: Pair<Rule>) -> Column {
+    Column::from(
+        selector
+            .into_inner()
+            .map(|quoted| quoted.as_str().to_owned())
+            .collect::<Vec<String>>(),
+    )
+}
+
 pub fn build(pairs: Pairs<Rule>) -> Result<Ast, Error<Rule>> {
     let mut commands = Vec::new();
 
@@ -79,14 +89,9 @@ pub fn build(pairs: Pairs<Rule>) -> Result<Ast, Error<Rule>> {
 
 fn build_command(pair: Pair<Rule>) -> Result<Command, Error<Rule>> {
     match pair.as_rule() {
-        Rule::select => {
-            let columns = pair
-                .into_inner()
-                .map(|quoted| quoted.as_str().to_owned())
-                .collect::<Vec<String>>();
-
-            Ok(Command::Select(Column::from(columns)))
-        }
+        Rule::select => Ok(Command::Select(get_column_selector(
+            pair.into_inner().next().unwrap(),
+        ))),
         Rule::comparison => {
             fields!(pair |> children : lhs, comparator, rhs);
 
@@ -162,6 +167,9 @@ fn build_command(pair: Pair<Rule>) -> Result<Command, Error<Rule>> {
                 direction,
             })
         }
+        Rule::trim => Ok(Command::Trim(get_column_selector(
+            pair.into_inner().next().unwrap(),
+        ))),
         rule => Err(Error::new_from_span(
             ErrorVariant::CustomError {
                 message: format!("Unhandled rule {rule:?}"),
@@ -220,6 +228,7 @@ impl Ast {
                     *is_numerical,
                     direction.clone(),
                 )?,
+                Command::Trim(columns) => trim::run(records.into_iter(), columns)?,
             }
         }
 

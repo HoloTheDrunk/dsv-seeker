@@ -8,21 +8,25 @@ ident = { (ASCII_ALPHA | "_")+ }
 
 atom = _{ ident | string }
 
-select = ${ "select" ~ ws+ ~ (
-    	(atom ~ (ws* ~ "," ~ ws* ~ atom)*) 
-      	| select_all
-    )}
+column_selector = ${
+    (atom ~ (ws* ~ "," ~ ws* ~ atom)*) 
+    | select_all
+}
 select_all = { "*" }
+
+select = ${ "select" ~ ws+ ~ column_selector }
 
 comparison = ${ "where" ~ ws+ ~ atom ~ ws* ~ comparator ~ ws* ~ atom }
 comparator = { "=" | "like" }
 
 enumerate = ${ "enum" ~ ws+ ~ atom }
 
+trim = ${ "trim" ~ ws+ ~ column_selector }
+
 sort = ${ "sort" ~ ws+ ~ (numerical_sort | atom) ~ ws+ ~ sort_direction }
 numerical_sort = ${ "num" ~ ws+ ~ atom }
 sort_direction = ${ "asc" | "desc" | "posc" }
 
-command = _{ select | comparison | enumerate | sort }
+command = _{ select | comparison | enumerate | sort | trim }
 
 program = _{ SOI ~ (command ~ ("|" ~ command)*)? ~ EOI }
