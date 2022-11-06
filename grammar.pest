@@ -10,8 +10,9 @@ atom = _{ ident | string }
 
 select = ${ "select" ~ ws+ ~ (
     	(atom ~ (ws* ~ "," ~ ws* ~ atom)*) 
-      	| "*"
+      	| select_all
     )}
+select_all = { "*" }
 
 comparison = ${ "where" ~ ws+ ~ atom ~ ws* ~ comparator ~ ws* ~ atom }
 comparator = { "=" | "like" }

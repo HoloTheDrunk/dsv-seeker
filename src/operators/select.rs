@@ -8,22 +8,23 @@ pub fn run(
 ) -> Result<Vec<csv::StringRecord>, String> {
     let (raw_headers, headers) = get_headers(&mut records)?;
 
-    if let Column::Names(names) = columns {
-        let indices = names
-            .iter()
-            .map(|name| {
-                headers
-                    .get(name.as_str())
-                    .copied()
-                    .ok_or(format!("Invalid column '{name}'"))
-            })
-            .collect::<Result<Vec<usize>, String>>()?;
+    match columns {
+        Column::All => Ok(std::iter::once(raw_headers).chain(records).collect()),
+        Column::Names(names) => {
+            let indices = names
+                .iter()
+                .map(|name| {
+                    headers
+                        .get(name.as_str())
+                        .copied()
+                        .ok_or(format!("Invalid column '{name}'"))
+                })
+                .collect::<Result<Vec<usize>, String>>()?;
 
-        Ok(std::iter::once(csv::StringRecord::from(names.clone()))
-            .chain(records.filter_map(move |record| apply(indices.clone(), record).ok()))
-            .collect())
-    } else {
-        Ok(std::iter::once(raw_headers).chain(records).collect())
+            Ok(std::iter::once(csv::StringRecord::from(names.clone()))
+                .chain(records.filter_map(move |record| apply(indices.clone(), record).ok()))
+                .collect())
+        }
     }
 }
 
