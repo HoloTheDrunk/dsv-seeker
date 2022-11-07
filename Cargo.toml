@@ -8,6 +8,7 @@ keywords = ["csv", "dsv", "query", "dsl"]
 categories = ["command-line-utilities", "compilers", "parser-implementations"]
 repository = "https://github.com/HoloTheDrunk/dsv-util"
 readme = "README.md"
+exclude = ["example.csv"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
