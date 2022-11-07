@@ -33,7 +33,7 @@ The `trim` command removes heading and trailing whitespace from desired columns'
 Commands are organized in isolated modules as much as possible.  
 **Steps**
 1. Add the grammar rule to the grammar.pest file:
-   - Create a new rule under the other commands' rules, right above the `command rule`.
+   - Create a new rule under the other commands' rules, right above the `command` rule.
    - Add that rule to the end of the `command` rule.
 2. Add your command to the `Command` enum in `src/ast.rs`.
 3. Handle matching from the rule to a new `Command::[your_rule]` in `src/ast.rs::build_command`.
