@@ -3,9 +3,9 @@
 A small tool to run basic queries on DSV files.
 
 1. [Commands](#commands)
-2. [How to add a new command](#how_to_add_a_new_command)
+2. [How to add a new command](#how-to-add-a-new-command)
 
-## [Commands](#dsv_util)
+## [Commands](#dsv-util)
 
 ### `"select" ("*" | (name ("," name)*))`
 
@@ -28,7 +28,7 @@ The `sort` command sorts rows based on the `name`d column.
 
 The `trim` command removes heading and trailing whitespace from desired columns' values.
 
-## [How to add a new command](#dsv_util)
+## [How to add a new command](#dsv-util)
 
 Commands are organized in isolated modules as much as possible.  
 **Steps**
