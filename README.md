@@ -44,3 +44,4 @@ Commands are organized in isolated modules as much as possible.
 4. Create your command's file in `src/operators/` and add the new module to `src/operators/mod.rs`.
 5. Look at other commands to figure out how to write yours.
 6. Add the match case for your rule in `src/ast.rs::Ast::run_on`.
+7. Add the command to this README and to the `src/main.rs::Cli` doc comment.
