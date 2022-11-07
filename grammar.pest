@@ -23,10 +23,12 @@ enumerate = ${ "enum" ~ ws+ ~ atom }
 
 trim = ${ "trim" ~ ws+ ~ column_selector }
 
+behead = ${ "behead" }
+
 sort = ${ "sort" ~ ws+ ~ (numerical_sort | atom) ~ ws+ ~ sort_direction }
 numerical_sort = ${ "num" ~ ws+ ~ atom }
 sort_direction = ${ "asc" | "desc" | "posc" }
 
-command = _{ select | comparison | enumerate | sort | trim }
+command = _{ select | comparison | enumerate | sort | trim | behead }
 
 program = _{ SOI ~ (command ~ ("|" ~ command)*)? ~ EOI }

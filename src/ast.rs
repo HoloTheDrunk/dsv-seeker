@@ -25,6 +25,7 @@ pub enum Command {
         direction: SortDirection,
     },
     Trim(Column),
+    Behead,
 }
 
 #[derive(Debug)]
@@ -170,6 +171,7 @@ fn build_command(pair: Pair<Rule>) -> Result<Command, Error<Rule>> {
         Rule::trim => Ok(Command::Trim(get_column_selector(
             pair.into_inner().next().unwrap(),
         ))),
+        Rule::behead => Ok(Command::Behead),
         rule => Err(Error::new_from_span(
             ErrorVariant::CustomError {
                 message: format!("Unhandled rule {rule:?}"),
@@ -229,6 +231,7 @@ impl Ast {
                     direction.clone(),
                 )?,
                 Command::Trim(columns) => trim::run(records.into_iter(), columns)?,
+                Command::Behead => behead::run(records.into_iter())?,
             }
         }
 

@@ -28,6 +28,10 @@ The `sort` command sorts rows based on the `name`d column.
 
 The `trim` command removes heading and trailing whitespace from desired columns' values.
 
+### `behead`
+
+The `behead` command removes the first line, that usually being the headers.
+
 ## [How to add a new command](#dsv-util)
 
 Commands are organized in isolated modules as much as possible.  

@@ -27,9 +27,8 @@ extern crate pest_derive;
 ///     trim    trim the values of named columns or all columns with an asterisk
 ///
 /// Example:
-///     dsv-util -p example.csv -d ',' "trim * | enum 'last name' | select 'last name'" | tail -n +2
-///     This command gets the list of last names from the example.csv file
-///     (notice the Bash 'tail -n +2' that removes the first line, i.e. the headers).
+///     dsv-util -p example.csv -d ',' "trim * | enum 'last name' | select 'last name' | behead"
+///     This command gets the list of last names from the example.csv file without the headers.
 struct Cli {
     /// Path of the desired DSV, omit for stdin
     #[arg(short, long, value_name = "PATH")]

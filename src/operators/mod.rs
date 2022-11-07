@@ -1,5 +1,6 @@
 mod lib;
 
+pub mod behead;
 pub mod comparison;
 pub mod enumerate;
 pub mod select;
