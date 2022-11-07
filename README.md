@@ -1,11 +1,11 @@
-# DSV util
+# DSV Seeker
 
 A small tool to run basic queries on DSV files.
 
 1. [Commands](#commands)
 2. [How to add a new command](#how-to-add-a-new-command)
 
-## [Commands](#dsv-util)
+## [Commands](#dsv-seeker)
 
 ### `"select" ("*" | (name ("," name)*))`
 
@@ -32,7 +32,7 @@ The `trim` command removes heading and trailing whitespace from desired columns'
 
 The `behead` command removes the first line, that usually being the headers.
 
-## [How to add a new command](#dsv-util)
+## [How to add a new command](#dsv-seeker)
 
 Commands are organized in isolated modules as much as possible.  
 **Steps**
