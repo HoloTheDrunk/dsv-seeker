@@ -13,7 +13,23 @@ extern crate pest;
 extern crate pest_derive;
 
 #[derive(ClapParser)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about, verbatim_doc_comment)]
+/// Simple DSV query runner.
+///
+/// The language used for queries is DSVQL. DSVQL works by piping the original data through
+/// different transformations.
+///
+/// Available commands are:
+///     select  select columns by name or all columns with an asterisk
+///     where   filter a column by string equality with '=' or regex pattern matching with 'like'
+///     enum    count the occurrences of values in a column
+///     sort    lines based on a column's values, numerically if 'num' is specified right after 'sort'
+///     trim    trim the values of named columns or all columns with an asterisk
+///
+/// Example:
+///     dsv-util -p example.csv -d ',' "trim * | enum 'last name' | select 'last name'" | tail -n +2
+///     This command gets the list of last names from the example.csv file
+///     (notice the Bash 'tail -n +2' that removes the first line, i.e. the headers).
 struct Cli {
     /// Path of the desired DSV, omit for stdin
     #[arg(short, long, value_name = "PATH")]
